@@ -1,0 +1,12 @@
+# Python-generated files
+__pycache__/
+**/__pycache__/
+build/
+dist/
+wheels/
+*.egg-info
+.venv/
+.env
+.ipynb_checkpoints/
+.DS_STORE
+**/.ipynb_checkpoints

@@ -1,0 +1,17 @@
+import sys
+
+sys.path.append("src")
+
+from src.create_app import create_application
+
+app = create_application()
+
+if __name__ == "__main__":
+    # ruff: noqa: T201
+    from src.create_app import app_config
+
+    if app_config.DEBUG:
+        app.run(debug=True, host="127.0.0.1", port=5001, use_reloader=True)
+    else:
+        print("hypercorn app:app")
+        app.run(host="127.0.0.1", port=5001)
