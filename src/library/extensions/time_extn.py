@@ -17,8 +17,8 @@ class TimezoneExtension:
     def init_app(self, app: Quart) -> None:
         time_zone_ = app.config.get("TIMEZONE", self._default_timezone)
         os.environ["TZ"] = time_zone_
-        if hasattr(time, "tzset"):
-            time.tzset()  # type: ignore
+        if hasattr(time, "tzset") and os.name != "nt":
+            time.tzset()
 
 
 timezone_extn = TimezoneExtension()

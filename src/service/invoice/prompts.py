@@ -16,7 +16,7 @@ Your primary task is to extract invoice details from image. The extracted detail
 10. Amount Paid [if present]
 11. Amount Due [if present]
 
-Kindly Note - If the document is not an invoice, return the reserved keyword "NO_INVOICE"
+Kindly Note - If the document is not an invoice Document, return the reserved keyword "NO_INVOICE_FOUND" only.
 
 Here is One Example Response format --
 ```
@@ -51,6 +51,7 @@ Here is One Example Response format --
 10. Amount Paid: NOT_AVAILABLE
 11. Amount Due: NOT_AVAILABLE
 ```
+Kindly Note - If the document is not an invoice Document, return the reserved keyword "NO_INVOICE_FOUND" only.
 """
 USER_MESSAGE_1 = "Please extract the invoice details from the image."
 

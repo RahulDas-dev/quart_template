@@ -2,15 +2,8 @@
 LOG_LEVEL=INFO
 # LOG_FILE=
 
-# DB configuration ...
-# DB_HOST=
-# DB_PORT=
-DB_NAME=invoice-inference.db
-# DB_USER=
-# DB_PASSWORD=
-DB_TYPE=sqlite
-
 # Deployment configuration ...
+
 DEPLOYMENT_ENV=PRODUCTION
 HOST=127.0.0.1
 PORT=5001
@@ -19,7 +12,10 @@ TIMEZONE=UTC
 LANGUAGE=en-US
 APPLICATION_NAME=Invoice-Inference
 DEBUG=False
+
 # Feature Configuration ...
+
 # POPPLER_PATH=path/to/be/set
 UPLOADS_DEFAULT_DEST=/app/temp
 CLEANUP_TEMP_FILES=True
+MAX_CONCURRENT_REQUEST=5

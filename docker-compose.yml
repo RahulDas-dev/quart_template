@@ -1,6 +1,6 @@
 services:
   doc-inference:
-    image: doc-infer:v2
+    image: doc-inference
     volumes:
       - ./.config:/app/.config:ro
       - ./.env:/app/.env:ro

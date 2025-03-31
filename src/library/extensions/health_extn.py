@@ -35,11 +35,13 @@ class HealthExtension:
                 thread_id = thread.ident
                 is_alive = thread.is_alive()
 
-                thread_list.append({
-                    "name": thread_name,
-                    "id": thread_id,
-                    "is_alive": is_alive,
-                })
+                thread_list.append(
+                    {
+                        "name": thread_name,
+                        "id": thread_id,
+                        "is_alive": is_alive,
+                    }
+                )
 
             reponse_ = {"pid": os.getpid(), "thread_num": num_threads, "threads": thread_list}
             return reponse_, 201

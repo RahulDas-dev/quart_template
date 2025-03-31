@@ -6,8 +6,10 @@ from pathlib import Path
 from typing import Any, ClassVar
 
 from pydantic_ai import Agent, BinaryContent, ModelRetry
+from pydantic_ai.exceptions import ModelHTTPError
 from pydantic_ai.models.openai import OpenAIModel
 from quart import Quart
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from .prompts import PAGE_TEMPLATE, SYSTEM_MESSAGE_1, SYSTEM_MESSAGE_2, USER_MESSAGE_1
 from .schemas import Invoice, InvoiceData
@@ -20,14 +22,16 @@ logger = logging.getLogger(__name__)
 class InvoiceSeviceConfig:
     model1_name: str = field(default="us.meta.llama3-2-90b-instruct-v1:0")
     model2_name: str = field(default="gpt-4o")
-    max_call_min: int = field(default=10)
+    max_concurrent_request: int = field(default=10)
 
     @classmethod
     def init_from_app(cls, app: Quart) -> "InvoiceSeviceConfig":
         model1_name_ = app.config.get("MODEL1_NAME", "")
         model2_name_ = app.config.get("MODEL2_NAME", "")
-        max_call_min_ = app.config.get("MAX_CALL_MIN", 10)
-        return InvoiceSeviceConfig(model1_name=model1_name_, model2_name=model2_name_, max_call_min=max_call_min_)
+        max_call_min_ = app.config.get("MAX_CONCURRENT_REQUEST", 10)
+        return InvoiceSeviceConfig(
+            model1_name=model1_name_, model2_name=model2_name_, max_concurrent_request=max_call_min_
+        )
 
 
 class InvoiceService:
@@ -54,6 +58,7 @@ class InvoiceService:
             model=OpenAIModel(cls.config.model2_name),
             system_prompt=SYSTEM_MESSAGE_1,
             result_type=str,
+            retries=0,
             model_settings={"temperature": 0},
         )
 
@@ -61,6 +66,7 @@ class InvoiceService:
             model=OpenAIModel(cls.config.model2_name),
             system_prompt=SYSTEM_MESSAGE_2,
             result_type=Invoice,
+            retries=0,
             model_settings={"temperature": 0},
         )
 
@@ -74,6 +80,11 @@ class InvoiceService:
         cls.agent2 = agent2
 
     @classmethod
+    @retry(
+        stop=stop_after_attempt(5),
+        wait=wait_exponential(multiplier=3, min=1, max=10),
+        retry=retry_if_exception_type(ModelHTTPError),
+    )
     async def _get_agent1_response(cls, img_path: Path, page_no: int) -> tuple[str, int]:
         async with cls.semaphore:
             logger.info(f"Agent1 Processing Page : {img_path.name}")
@@ -87,6 +98,11 @@ class InvoiceService:
             return response, page_no
 
     @classmethod
+    @retry(
+        stop=stop_after_attempt(5),
+        wait=wait_exponential(multiplier=3, min=1, max=10),
+        retry=retry_if_exception_type(ModelHTTPError),
+    )
     async def _get_agent2_response(cls, content: str, page_no: int) -> Invoice:
         async with cls.semaphore:
             logger.info(f"Agent2 Processing Page : {page_no}")
@@ -97,19 +113,22 @@ class InvoiceService:
     async def _process_response(cls, agent1_response: list[tuple[str, int]]) -> AsyncGenerator[tuple, None]:
         agent1_response = sorted(agent1_response, key=lambda x: x[1])
         for response, page_no in agent1_response:
+            if "NO_INVOICE_FOUND" in response:
+                logger.info(f"Skipped the page {page_no} content - {response}")
+                continue
             yield response, page_no
 
     @classmethod
     async def run(cls, image_dir: str | Path) -> InvoiceData:
         cls.setup_agents()
-        cls.semaphore = asyncio.Semaphore(cls.config.max_call_min)
+        cls.semaphore = asyncio.Semaphore(cls.config.max_concurrent_request)
         pdf_content, agent1_task = [], []
         async for img_path, page_no in sorted_images(image_dir):
             agent1_task.append(cls._get_agent1_response(img_path, page_no))
         pdf_content = await asyncio.gather(*agent1_task)
         logger.info(f"Agent1 has completed the processing of {len(pdf_content)} pages")
         final_result, agent2_task = [], []
-        cls.semaphore = asyncio.Semaphore(cls.config.max_call_min)
+        cls.semaphore = asyncio.Semaphore(cls.config.max_concurrent_request)
         async for content, p_no in cls._process_response(pdf_content):
             agent2_task.append(cls._get_agent2_response(content, p_no))
         final_result = await asyncio.gather(*agent2_task)

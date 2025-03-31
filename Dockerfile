@@ -8,17 +8,27 @@ RUN POPPLER_PATH=$(dirname $(which pdftotext)) && echo "POPPLER_PATH=$POPPLER_PA
 ENV POPPLER_PATH=$POPPLER_PATH
 ENV PATH=$POPPLER_PATH:$PATH
 
+# copy the application to app directory 
 COPY src /app/src
-COPY run_application.py /app/run_application.py
+COPY run_app.py /app/run_app.py
 COPY pyproject.toml /app/pyproject.toml
 COPY uv.lock /app/uv.lock
 COPY .env /app/.env
-COPY config.cfg /app/config.cfg
+COPY .config.prod /app/.config
+
+# app directory is the current working directory
 WORKDIR /app
+
+# create a temp direcoroty
 RUN mkdir -p /app/temp
 
+# install uv
 RUN pip install --no-cache-dir uv
-RUN uv sync --frozen
-ENTRYPOINT [ "uv", "run","run_app.py" ]
+
+# install dependency
+RUN uv sync --frozen --no-dev
+
+# run the app
+ENTRYPOINT [ "uv", "run", "hypercorn", "run_app:app", "--bind", "127.0.0.1:5001" ]
 
 
