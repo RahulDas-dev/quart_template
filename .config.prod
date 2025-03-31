@@ -20,6 +20,6 @@ LANGUAGE=en-US
 APPLICATION_NAME=Invoice-Inference
 DEBUG=False
 # Feature Configuration ...
-# POPPLER_PATH=C:/Users/rdas6/OneDrive/Desktop/codespace/vyturr/poppler-24.08.0/Library/bin
+# POPPLER_PATH=path/to/be/set
 UPLOADS_DEFAULT_DEST=/app/temp
 CLEANUP_TEMP_FILES=True
