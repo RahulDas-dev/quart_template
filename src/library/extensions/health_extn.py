@@ -1,9 +1,9 @@
-import json
 import os
 import threading
 from typing import Optional
 
-from quart import Quart, Response
+from quart import Quart
+from quart_schema import hide
 
 
 class HealthExtension:
@@ -13,15 +13,19 @@ class HealthExtension:
 
     def init_app(self, app: Quart) -> None:
         @app.route("/health")
-        async def get_health_info() -> Response:
-            return Response(
-                json.dumps({"pid": os.getpid(), "status": "ok", "version": app.config.get("API_VERSION")}),
-                status=200,
-                content_type="application/json",
-            )
+        @hide
+        async def get_health_info() -> tuple[dict[str, str], int]:
+            resonse_ = {
+                "pid": os.getpid(),
+                "status": "ok",
+                "version": app.config.get("API_VERSION"),
+                "app_name": app.config.get("APPLICATION_NAME"),
+            }
+            return resonse_, 201
 
         @app.route("/threads")
-        async def get_threads_info() -> Response:
+        @hide
+        async def get_threads_info() -> tuple[dict[str, str], int]:
             num_threads = threading.active_count()
             threads = threading.enumerate()
 
@@ -31,19 +35,14 @@ class HealthExtension:
                 thread_id = thread.ident
                 is_alive = thread.is_alive()
 
-                thread_list.append(
-                    {
-                        "name": thread_name,
-                        "id": thread_id,
-                        "is_alive": is_alive,
-                    }
-                )
+                thread_list.append({
+                    "name": thread_name,
+                    "id": thread_id,
+                    "is_alive": is_alive,
+                })
 
-            return Response(
-                json.dumps({"pid": os.getpid(), "thread_num": num_threads, "threads": thread_list}),
-                status=200,
-                content_type="application/json",
-            )
+            reponse_ = {"pid": os.getpid(), "thread_num": num_threads, "threads": thread_list}
+            return reponse_, 201
 
 
 health_extn = HealthExtension()

@@ -3,4 +3,4 @@ from quart import Quart
 
 
 def register_app(app: Quart) -> None:  # noqa: ARG001
-    load_dotenv(".env")
+    load_dotenv()

@@ -21,12 +21,12 @@ def _register_extensions(app: InvoiceInferApp, bebug: bool = False) -> None:
     extensions = [
         timezone_setup,
         logging_setup,
-        health_setup,
-        lifespan_setup,
-        uploads_setup,
         warning_setup,
         envvar_setup,
         api_schema,
+        health_setup,
+        lifespan_setup,
+        uploads_setup,
     ]
     for extension in extensions:
         logging.info(f"Registering {extension.__name__} ...")

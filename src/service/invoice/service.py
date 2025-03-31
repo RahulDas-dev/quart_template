@@ -1,7 +1,9 @@
+import asyncio
 import logging
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, ClassVar, Tuple
+from typing import Any, ClassVar
 
 from pydantic_ai import Agent, BinaryContent, ModelRetry
 from pydantic_ai.models.openai import OpenAIModel
@@ -18,16 +20,20 @@ logger = logging.getLogger(__name__)
 class InvoiceSeviceConfig:
     model1_name: str = field(default="us.meta.llama3-2-90b-instruct-v1:0")
     model2_name: str = field(default="gpt-4o")
+    max_call_min: int = field(default=10)
 
     @classmethod
     def init_from_app(cls, app: Quart) -> "InvoiceSeviceConfig":
         model1_name_ = app.config.get("MODEL1_NAME", "")
         model2_name_ = app.config.get("MODEL2_NAME", "")
-        return InvoiceSeviceConfig(model1_name=model1_name_, model2_name=model2_name_)
+        max_call_min_ = app.config.get("MAX_CALL_MIN", 10)
+        return InvoiceSeviceConfig(model1_name=model1_name_, model2_name=model2_name_, max_call_min=max_call_min_)
 
 
 class InvoiceService:
     config: ClassVar[InvoiceSeviceConfig]
+    agent1: Agent[None, str]
+    agent2: Agent[None, Invoice]
 
     @classmethod
     def configure_from_app(cls, app: Quart) -> None:
@@ -39,7 +45,7 @@ class InvoiceService:
         cls.config = config
 
     @classmethod
-    def setup_agents(cls) -> Tuple[Agent[None, str], Agent[None, Invoice]]:
+    def setup_agents(cls) -> None:
         agent1 = Agent(
             # model=BedrockConverseModel(
             #     model_name=cls.config.model1_name,
@@ -64,28 +70,48 @@ class InvoiceService:
                 return result
             return ModelRetry("Final result Format is not Correct ")
 
-        return agent1, agent2
+        cls.agent1 = agent1
+        cls.agent2 = agent2
 
     @classmethod
-    async def run(cls, image_dir: str | Path) -> Tuple[InvoiceData, str]:
-        agent1, agent2 = cls.setup_agents()
-        pdf_content, page_no = [], 0
-        for file in sorted_images(image_dir):
-            page_no += 1
-            logger.info(f"Agent1 Processing Page : {file.name}")
-            img_byte, mimetype = image_to_byte_string(file.resolve())
+    async def _get_agent1_response(cls, img_path: Path, page_no: int) -> tuple[str, int]:
+        async with cls.semaphore:
+            logger.info(f"Agent1 Processing Page : {img_path.name}")
+            img_byte, mimetype = image_to_byte_string(img_path.resolve())
             input_msg = [
                 USER_MESSAGE_1,
                 BinaryContent(data=img_byte, media_type=mimetype),
             ]
-            result1 = agent1.run(input_msg)
-            pdf_content.append((page_no, PAGE_TEMPLATE.substitute(page_no=page_no, page_content=result1.data)))
-        logger.info(f"Agent1 has completed the processing of {page_no} pages")
-        final_result = []
-        for p_no, content in pdf_content:
-            logger.info(f"Agent2 Processing Page No : {p_no}")
-            result2 = agent2.run([content])
-            if isinstance(result2.data, Invoice):
-                final_result.append(result2.data)
-        invoice_data = InvoiceData(details=final_result)
-        return invoice_data, "\n".join(item for _, item in pdf_content)
+            result1 = await cls.agent1.run(input_msg)
+            response = PAGE_TEMPLATE.substitute(page_no=page_no, page_content=result1.data)
+            return response, page_no
+
+    @classmethod
+    async def _get_agent2_response(cls, content: str, page_no: int) -> Invoice:
+        async with cls.semaphore:
+            logger.info(f"Agent2 Processing Page : {page_no}")
+            result2 = await cls.agent2.run([content])
+            return result2.data
+
+    @classmethod
+    async def _process_response(cls, agent1_response: list[tuple[str, int]]) -> AsyncGenerator[tuple, None]:
+        agent1_response = sorted(agent1_response, key=lambda x: x[1])
+        for response, page_no in agent1_response:
+            yield response, page_no
+
+    @classmethod
+    async def run(cls, image_dir: str | Path) -> InvoiceData:
+        cls.setup_agents()
+        cls.semaphore = asyncio.Semaphore(cls.config.max_call_min)
+        pdf_content, agent1_task = [], []
+        async for img_path, page_no in sorted_images(image_dir):
+            agent1_task.append(cls._get_agent1_response(img_path, page_no))
+        pdf_content = await asyncio.gather(*agent1_task)
+        logger.info(f"Agent1 has completed the processing of {len(pdf_content)} pages")
+        final_result, agent2_task = [], []
+        cls.semaphore = asyncio.Semaphore(cls.config.max_call_min)
+        async for content, p_no in cls._process_response(pdf_content):
+            agent2_task.append(cls._get_agent2_response(content, p_no))
+        final_result = await asyncio.gather(*agent2_task)
+        final_result = [result for result in final_result if isinstance(result, Invoice)]
+        return InvoiceData(details=final_result)

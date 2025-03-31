@@ -487,18 +487,6 @@ wheels = [
 ]
 
 [[package]]
-name = "fastenv"
-version = "0.6.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "anyio" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/0b/90/a8297daf2256fbfe8d93d6ce2bab7e53ae75362f2d1b21742c1e430ba8c5/fastenv-0.6.0.tar.gz", hash = "sha256:7c5e506fdf7f53273f6f614a072119aed3b2c2a0eab08e41d581e7c55741ff82", size = 16972 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/57/15/caf9c8fbaf3c072f0410af45c11b3d13b2c5a44fc4c86a16349583c8e176/fastenv-0.6.0-py3-none-any.whl", hash = "sha256:eab9b801ae45b531cadb6cf801a2157cba4f10b2e68fd7903a431f8bc3982766", size = 17311 },
-]
-
-[[package]]
 name = "fastjsonschema"
 version = "2.21.1"
 source = { registry = "https://pypi.org/simple" }
@@ -729,8 +717,6 @@ name = "invoice-infer"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "fastenv" },
-    { name = "hypercorn" },
     { name = "pdf2image" },
     { name = "pydantic" },
     { name = "pydantic-ai" },
@@ -750,14 +736,12 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "fastenv", specifier = ">=0.6.0" },
-    { name = "hypercorn", specifier = ">=0.17.3" },
     { name = "pdf2image", specifier = ">=1.17.0" },
     { name = "pydantic", specifier = ">=2.10.6" },
     { name = "pydantic-ai", specifier = ">=0.0.46" },
     { name = "pydantic-settings", specifier = ">=2.8.1" },
-    { name = "pytz", specifier = ">=2025.1" },
-    { name = "quart", specifier = ">=0.19.9" },
+    { name = "pytz", specifier = ">=2025.2" },
+    { name = "quart", specifier = "==0.20.0" },
     { name = "quart-cors", specifier = ">=0.8.0" },
     { name = "quart-schema", specifier = ">=0.21.0" },
     { name = "quart-uploads", specifier = ">=0.0.4" },
@@ -1877,11 +1861,11 @@ wheels = [
 
 [[package]]
 name = "pytz"
-version = "2025.1"
+version = "2025.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/5f/57/df1c9157c8d5a05117e455d66fd7cf6dbc46974f832b1058ed4856785d8a/pytz-2025.1.tar.gz", hash = "sha256:c2db42be2a2518b28e65f9207c4d05e6ff547d1efa4086469ef855e4ab70178e", size = 319617 }
+sdist = { url = "https://files.pythonhosted.org/packages/f8/bf/abbd3cdfb8fbc7fb3d4d38d320f2441b1e7cbe29be4f23797b4a2b5d8aac/pytz-2025.2.tar.gz", hash = "sha256:360b9e3dbb49a209c21ad61809c7fb453643e048b38924c765813546746e81c3", size = 320884 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/eb/38/ac33370d784287baa1c3d538978b5e2ea064d4c1b93ffbd12826c190dd10/pytz-2025.1-py2.py3-none-any.whl", hash = "sha256:89dd22dca55b46eac6eda23b2d72721bf1bdfef212645d81513ef5d03038de57", size = 507930 },
+    { url = "https://files.pythonhosted.org/packages/81/c4/34e93fe5f5429d7570ec1fa436f1986fb1f00c3e0f43a589fe2bbcd22c3f/pytz-2025.2-py2.py3-none-any.whl", hash = "sha256:5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00", size = 509225 },
 ]
 
 [[package]]
@@ -2006,7 +1990,7 @@ wheels = [
 
 [[package]]
 name = "quart"
-version = "0.19.9"
+version = "0.20.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiofiles" },
@@ -2019,9 +2003,9 @@ dependencies = [
     { name = "markupsafe" },
     { name = "werkzeug" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/07/05/0d7a280a89b05a6b6c2224b4a1b991b7a4c52eed5e14b92c3c63ce29c235/quart-0.19.9.tar.gz", hash = "sha256:30a61a0d7bae1ee13e6e99dc14c929b3c945e372b9445d92d21db053e91e95a5", size = 65653 }
+sdist = { url = "https://files.pythonhosted.org/packages/1d/9d/12e1143a5bd2ccc05c293a6f5ae1df8fd94a8fc1440ecc6c344b2b30ce13/quart-0.20.0.tar.gz", hash = "sha256:08793c206ff832483586f5ae47018c7e40bdd75d886fee3fabbdaa70c2cf505d", size = 63874 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a8/01/e5d6127f6304c7e596e5c8eec5accdec0f698ec65fe342d8474ad5223717/quart-0.19.9-py3-none-any.whl", hash = "sha256:8acb8b299c72b66ee9e506ae141498bbbfcc250b5298fbdb712e97f3d7e4082f", size = 78294 },
+    { url = "https://files.pythonhosted.org/packages/7e/e9/cc28f21f52913adf333f653b9e0a3bf9cb223f5083a26422968ba73edd8d/quart-0.20.0-py3-none-any.whl", hash = "sha256:003c08f551746710acb757de49d9b768986fd431517d0eb127380b656b98b8f1", size = 77960 },
 ]
 
 [[package]]

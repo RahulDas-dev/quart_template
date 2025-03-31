@@ -1,6 +1,7 @@
 import io
 import os
 import re
+from collections.abc import AsyncGenerator
 from pathlib import Path
 from typing import Tuple
 
@@ -23,7 +24,7 @@ def image_to_byte_string(image_path: str | Path) -> Tuple[bytes, str]:
     return img_byte_arr, image.get_format_mimetype() or "image/png"
 
 
-def sorted_images(image_dir: str | Path) -> list[Path]:
+async def sorted_images(image_dir: str | Path) -> AsyncGenerator[tuple[Path, int], None]:
     """Returns a list of PNG files sorted by page number."""
     image_files = list(Path(image_dir).rglob("*.png"))
 
@@ -32,4 +33,5 @@ def sorted_images(image_dir: str | Path) -> list[Path]:
         match = re.search(r"Page_(\d+)\.png", file.name)
         return int(match.group(1)) if match else 1000000  # Handle non-matching files by placing them at the end
 
-    return sorted(image_files, key=extract_page_num)
+    for pg_index, item in enumerate(sorted(image_files, key=extract_page_num)):
+        yield item, pg_index + 1
